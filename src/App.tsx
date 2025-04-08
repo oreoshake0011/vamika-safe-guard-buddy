@@ -17,7 +17,7 @@ import ContactsPage from './pages/ContactsPage';
 import EmergencyContactsPage from './pages/EmergencyContactsPage';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './App.css';
 

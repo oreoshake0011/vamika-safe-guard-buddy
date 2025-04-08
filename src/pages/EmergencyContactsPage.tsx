@@ -68,7 +68,7 @@ const EmergencyContactsPage = () => {
       const result = await addContact({
         name: data.name,
         phone_number: data.phone_number,
-        email: data.email || '',
+        email: data.email,
         relationship: data.relationship || '',
         priority: contacts.length > 0 ? Math.max(...contacts.map(c => c.priority)) + 1 : 1,
       });
