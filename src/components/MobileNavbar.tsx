@@ -1,40 +1,46 @@
-
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Shield, Users, Map, Settings, Camera, MessageSquare, AlertTriangle, User } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Home, Shield, MapPin, Phone, AlarmCheck, BadgeInfo, Settings, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMobile } from '@/hooks/useMobile';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
-const MobileNavbar = () => {
+const MobileNavbar: React.FC = () => {
   const location = useLocation();
-  
-  const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Safety', path: '/safety', icon: Shield },
-    { name: 'Scan', path: '/camera-scan', icon: Camera },
-    { name: 'Alerts', path: '/incident-feed', icon: AlertTriangle },
-    { name: 'Profile', path: '/profile', icon: User },
+  const { user } = useAuth();
+  const isMobile = useMobile();
+  const isActive = (path: string) => location.pathname === path;
+
+  if (!isMobile) return null;
+
+  const menuItems = [
+    { icon: Home, label: 'Home', path: '/', auth: false },
+    { icon: Shield, label: 'Safety', path: '/safety', auth: true },
+    { icon: MapPin, label: 'Zones', path: '/zones', auth: true },
+    { icon: Phone, label: 'Emergency', path: '/emergency-contacts', auth: true },
+    { icon: AlarmCheck, label: 'SOS', path: '/sos', auth: true },
+    { icon: BadgeInfo, label: 'Incidents', path: '/feed', auth: true },
+    { icon: Settings, label: 'Settings', path: '/settings', auth: true },
+    { icon: User, label: 'Profile', path: '/profile', auth: true },
   ];
 
+  // Filter menu items based on authentication status
+  const filteredMenuItems = menuItems.filter(item => !item.auth || (item.auth && user));
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-sm border-t md:hidden">
-      <div className="flex items-center justify-around">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "flex flex-col items-center py-3 px-2 flex-1 text-xs",
-              location.pathname === item.path 
-                ? "text-primary" 
-                : "text-muted-foreground hover:text-primary"
-            )}
-          >
-            <item.icon className="h-5 w-5 mb-1" />
-            <span>{item.name}</span>
-          </Link>
+    <nav className="fixed bottom-0 left-0 w-full bg-secondary z-50 border-t">
+      <ul className="flex justify-around p-2">
+        {filteredMenuItems.map(item => (
+          <li key={item.label}>
+            <Link to={item.path} className="flex flex-col items-center">
+              <item.icon className={cn("h-6 w-6", isActive(item.path) ? 'text-primary' : 'text-muted-foreground')} />
+              <span className="text-xs text-muted-foreground">{item.label}</span>
+            </Link>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </nav>
   );
 };
 
