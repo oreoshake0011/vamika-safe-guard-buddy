@@ -1,0 +1,122 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 260 43% 98%;
+    --foreground: 260 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 260 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 260 10% 10%;
+
+    --primary: 275 35% 50%;
+    --primary-foreground: 275 10% 98%;
+
+    --secondary: 180 35% 50%;
+    --secondary-foreground: 180 10% 98%;
+
+    --muted: 260 10% 95%;
+    --muted-foreground: 260 10% 50%;
+
+    --accent: 263 35% 95%;
+    --accent-foreground: 263 35% 35%;
+
+    --destructive: 355 84% 56%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 260 10% 90%;
+    --input: 260 10% 90%;
+    --ring: 275 35% 50%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 260 10% 10%;
+    --foreground: 260 10% 98%;
+
+    --card: 260 10% 15%;
+    --card-foreground: 260 10% 98%;
+
+    --popover: 260 10% 15%;
+    --popover-foreground: 260 10% 98%;
+
+    --primary: 275 35% 50%;
+    --primary-foreground: 275 10% 98%;
+
+    --secondary: 180 35% 50%;
+    --secondary-foreground: 180 10% 98%;
+
+    --muted: 260 10% 20%;
+    --muted-foreground: 260 10% 60%;
+
+    --accent: 263 35% 20%;
+    --accent-foreground: 263 35% 80%;
+
+    --destructive: 355 84% 56%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 260 10% 20%;
+    --input: 260 10% 20%;
+    --ring: 275 35% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer components {
+  .sos-button {
+    @apply bg-destructive text-white font-bold rounded-full shadow-lg 
+      transition-all duration-300 hover:bg-red-700 active:scale-95 
+      flex items-center justify-center focus:outline-none focus:ring-4 
+      focus:ring-red-300 focus:ring-opacity-50;
+  }
+  
+  .card-safety {
+    @apply bg-white dark:bg-card rounded-xl shadow-md p-4 border 
+      border-border hover:shadow-lg transition-all duration-300 animate-fade-in-up;
+  }
+  
+  .nav-item {
+    @apply p-3 rounded-lg flex items-center gap-2 text-foreground/80 
+      hover:bg-accent hover:text-primary transition-colors;
+  }
+  
+  .nav-item-active {
+    @apply bg-accent text-primary font-medium;
+  }
+  
+  .animate-pulse-soft {
+    animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
