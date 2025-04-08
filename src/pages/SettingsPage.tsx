@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { 
   Settings, Bell, MapPin, Shield, User, Lock, 
-  Moon, Smartphone, HelpCircle, BookOpen
+  Smartphone, HelpCircle, BookOpen
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,7 +16,6 @@ const SettingsPage = () => {
     locationTracking: true,
     sosGesture: true,
     biometricAuth: false,
-    darkMode: false,
     dataBackup: true,
     safetyTips: true,
   });
@@ -149,17 +148,6 @@ const SettingsPage = () => {
               <Settings className="h-4 w-4" />
               App Preferences
             </h2>
-          </div>
-          
-          <div className="p-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">Dark Mode</h3>
-              <p className="text-sm text-muted-foreground">Toggle between light and dark themes</p>
-            </div>
-            <Switch 
-              checked={settings.darkMode} 
-              onCheckedChange={() => handleToggle('darkMode')}
-            />
           </div>
         </div>
         

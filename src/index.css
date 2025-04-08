@@ -37,36 +37,6 @@
 
     --radius: 0.75rem;
   }
-
-  .dark {
-    --background: 260 10% 10%;
-    --foreground: 260 10% 98%;
-
-    --card: 260 10% 15%;
-    --card-foreground: 260 10% 98%;
-
-    --popover: 260 10% 15%;
-    --popover-foreground: 260 10% 98%;
-
-    --primary: 275 35% 50%;
-    --primary-foreground: 275 10% 98%;
-
-    --secondary: 180 35% 50%;
-    --secondary-foreground: 180 10% 98%;
-
-    --muted: 260 10% 20%;
-    --muted-foreground: 260 10% 60%;
-
-    --accent: 263 35% 20%;
-    --accent-foreground: 263 35% 80%;
-
-    --destructive: 355 84% 56%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 260 10% 20%;
-    --input: 260 10% 20%;
-    --ring: 275 35% 60%;
-  }
 }
 
 @layer base {
@@ -88,7 +58,7 @@
   }
   
   .card-safety {
-    @apply bg-white dark:bg-card rounded-xl shadow-md p-4 border 
+    @apply bg-white rounded-xl shadow-md p-4 border 
       border-border hover:shadow-lg transition-all duration-300 animate-fade-in-up;
   }
   
