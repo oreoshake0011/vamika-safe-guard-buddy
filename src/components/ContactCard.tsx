@@ -18,6 +18,7 @@ interface ContactCardProps {
   onCall?: (contact: Contact) => void;
   onEmail?: (contact: Contact) => void;
   onDelete?: (id: string) => void;
+  onClick?: () => void;
   className?: string;
 }
 
@@ -26,10 +27,11 @@ const ContactCard: React.FC<ContactCardProps> = ({
   onCall,
   onEmail,
   onDelete,
+  onClick,
   className,
 }) => {
   return (
-    <div className={cn("card-safety", className)}>
+    <div className={cn("card-safety", className)} onClick={onClick}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1">
           <h3 className="font-semibold text-lg">{contact.name}</h3>
@@ -50,7 +52,10 @@ const ContactCard: React.FC<ContactCardProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => onCall(contact)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCall(contact);
+              }}
               className="text-primary hover:text-primary-foreground hover:bg-primary"
             >
               <Phone className="h-4 w-4" />
@@ -61,7 +66,10 @@ const ContactCard: React.FC<ContactCardProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => onEmail(contact)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEmail(contact);
+              }}
               className="text-primary hover:text-primary-foreground hover:bg-primary"
             >
               <Mail className="h-4 w-4" />
@@ -72,7 +80,10 @@ const ContactCard: React.FC<ContactCardProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => onDelete(contact.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(contact.id);
+              }}
               className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
             >
               <Trash2 className="h-4 w-4" />

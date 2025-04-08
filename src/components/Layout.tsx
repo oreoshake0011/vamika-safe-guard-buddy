@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Shield, Users, Map, Settings, Menu, X, Camera, MessageSquare, AlertTriangle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobile } from '@/hooks/useMobile';
 import MobileNavbar from './MobileNavbar';
 
 type LayoutProps = {
@@ -14,7 +13,7 @@ type LayoutProps = {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const location = useLocation();
-  const isMobile = useIsMobile();
+  const isMobile = useMobile();
   
   const navItems = [
     { name: 'Home', path: '/', icon: Home },
@@ -23,7 +22,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Safe Zones', path: '/zones', icon: Map },
     { name: 'Camera Scanner', path: '/camera-scan', icon: Camera },
     { name: 'Incident Reports', path: '/incident-feed', icon: AlertTriangle },
-    // { name: 'AI Assistant', path: '/ai-assistant', icon: MessageSquare },
     { name: 'Profile', path: '/profile', icon: User },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];

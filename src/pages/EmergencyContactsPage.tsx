@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useEmergencyContacts, EmergencyContact } from '@/hooks/useEmergencyContacts';
@@ -67,7 +66,10 @@ const EmergencyContactsPage = () => {
   const handleAddContact = async (data: ContactFormValues) => {
     try {
       const result = await addContact({
-        ...data,
+        name: data.name,
+        phone_number: data.phone_number,
+        email: data.email,
+        relationship: data.relationship || '',
         priority: contacts.length > 0 ? Math.max(...contacts.map(c => c.priority)) + 1 : 1,
       });
 
@@ -153,7 +155,6 @@ const EmergencyContactsPage = () => {
   };
 
   const handleImportFromDevice = () => {
-    // Navigate to the contacts page
     window.location.href = '/contacts';
   };
 
@@ -229,7 +230,6 @@ const EmergencyContactsPage = () => {
           </div>
         )}
 
-        {/* Add Contact Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -306,7 +306,6 @@ const EmergencyContactsPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Contact Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
