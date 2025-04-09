@@ -79,8 +79,11 @@ serve(async (req) => {
         
         // Ensure phone number has country code
         if (!formattedPhone.startsWith('+')) {
-          // Add US country code as default if none provided
-          formattedPhone = `+1${formattedPhone}`
+          // Add India country code as default
+          formattedPhone = `+91${formattedPhone}`
+        } else if (formattedPhone.startsWith('+') && !formattedPhone.startsWith('+91')) {
+          // If it has another country code, replace it with India's code
+          formattedPhone = `+91${formattedPhone.substring(1)}`
         }
         
         // Validate phone number format (must be E.164 format for Twilio)

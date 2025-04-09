@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -43,16 +42,28 @@ const ContactsPage = () => {
         const formattedContacts: DeviceContact[] = result.contacts
           .map(contact => ({
             displayName: contact.name?.display || 'Unnamed',
-            phoneNumbers: contact.phones?.map(p => p.number) || [],
+            phoneNumbers: contact.phones?.map(p => {
+              let phoneNumber = p.number || '';
+              phoneNumber = phoneNumber.replace(/\s+|-|\(|\)|\.|\+/g, '');
+              
+              if (/^\d{10}$/.test(phoneNumber)) {
+                return '+91' + phoneNumber;
+              }
+              
+              if (phoneNumber.startsWith('91') || phoneNumber.startsWith('0091')) {
+                return '+91' + phoneNumber.replace(/^(91|0091)/, '');
+              }
+              
+              return phoneNumber.startsWith('+') ? phoneNumber : '+' + phoneNumber;
+            }) || [],
             selected: false,
           }))
           .map(contact => ({
             ...contact,
-            phoneNumbers: [...new Set(contact.phoneNumbers)], // remove duplicate numbers
+            phoneNumbers: [...new Set(contact.phoneNumbers)],
           }))
           .filter(contact => contact.displayName && contact.phoneNumbers.length > 0);
 
-        // Remove duplicate contacts by name + number
         const uniqueContactsMap = new Map();
         for (const c of formattedContacts) {
           const key = `${c.displayName}-${c.phoneNumbers.join(',')}`;
@@ -107,7 +118,6 @@ const ContactsPage = () => {
     newFilteredContacts[index].selected = !newFilteredContacts[index].selected;
     setFilteredContacts(newFilteredContacts);
 
-    // Update the main contacts array as well
     const contactToUpdate = newFilteredContacts[index];
     const mainContactIndex = contacts.findIndex(
       c => c.displayName === contactToUpdate.displayName && 
@@ -145,7 +155,6 @@ const ContactsPage = () => {
     setLoading(true);
     const results = [];
 
-    // Get current max priority
     let maxPriority = 0;
     if (emergencyContacts.length > 0) {
       maxPriority = Math.max(...emergencyContacts.map(c => c.priority));
@@ -153,10 +162,14 @@ const ContactsPage = () => {
 
     for (const [index, contact] of selectedContacts.entries()) {
       try {
-        // If contact has multiple phone numbers, use the first one
-        const phoneNumber = contact.phoneNumbers[0];
+        let phoneNumber = contact.phoneNumbers[0];
         
-        // Check if contact already exists in emergency contacts
+        if (!phoneNumber.startsWith('+')) {
+          phoneNumber = '+91' + phoneNumber;
+        } else if (!phoneNumber.startsWith('+91')) {
+          phoneNumber = '+91' + phoneNumber.substring(1);
+        }
+        
         const exists = emergencyContacts.some(
           c => c.phone_number === phoneNumber && c.name === contact.displayName
         );
@@ -190,7 +203,6 @@ const ContactsPage = () => {
       }
     }
 
-    // Unselect all contacts
     const newContacts = contacts.map(c => ({ ...c, selected: false }));
     setContacts(newContacts);
     setFilteredContacts(newContacts.filter(contact =>
@@ -199,7 +211,6 @@ const ContactsPage = () => {
 
     setLoading(false);
 
-    // Show toast with results
     const successCount = results.filter(r => r.success).length;
     if (successCount > 0) {
       toast({
@@ -237,7 +248,6 @@ const ContactsPage = () => {
     setIsSendingSms(true);
 
     try {
-      // Call Supabase Edge Function to send SMS
       const { data, error } = await supabase.functions.invoke('send-emergency-sms', {
         body: {
           message: smsMessage,

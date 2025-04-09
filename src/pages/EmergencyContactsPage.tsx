@@ -47,7 +47,7 @@ const EmergencyContactsPage = () => {
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
       name: '',
-      phone_number: '',
+      phone_number: '+91',
       email: '',
       relationship: '',
     },
@@ -65,9 +65,16 @@ const EmergencyContactsPage = () => {
 
   const handleAddContact = async (data: ContactFormValues) => {
     try {
+      let phoneNumber = data.phone_number;
+      if (!phoneNumber.startsWith('+')) {
+        phoneNumber = '+91' + phoneNumber;
+      } else if (!phoneNumber.startsWith('+91')) {
+        phoneNumber = '+91' + phoneNumber.substring(1);
+      }
+
       const result = await addContact({
         name: data.name,
-        phone_number: data.phone_number,
+        phone_number: phoneNumber,
         email: data.email,
         relationship: data.relationship || '',
         priority: contacts.length > 0 ? Math.max(...contacts.map(c => c.priority)) + 1 : 1,
@@ -75,7 +82,12 @@ const EmergencyContactsPage = () => {
 
       if (result.success) {
         setIsAddDialogOpen(false);
-        form.reset();
+        form.reset({
+          name: '',
+          phone_number: '+91',
+          email: '',
+          relationship: '',
+        });
         toast({
           title: "Contact Added",
           description: `${data.name} has been added to your emergency contacts.`,
@@ -101,7 +113,17 @@ const EmergencyContactsPage = () => {
     if (!currentContact) return;
 
     try {
-      const result = await updateContact(currentContact.id, data);
+      let phoneNumber = data.phone_number;
+      if (!phoneNumber.startsWith('+')) {
+        phoneNumber = '+91' + phoneNumber;
+      } else if (!phoneNumber.startsWith('+91')) {
+        phoneNumber = '+91' + phoneNumber.substring(1);
+      }
+
+      const result = await updateContact(currentContact.id, {
+        ...data,
+        phone_number: phoneNumber
+      });
 
       if (result.success) {
         setIsEditDialogOpen(false);
@@ -258,10 +280,10 @@ const EmergencyContactsPage = () => {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. +1234567890" {...field} />
+                        <Input placeholder="e.g. +919876543210" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Include country code for international numbers
+                        Indian numbers start with +91 followed by a 10-digit number
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -334,10 +356,10 @@ const EmergencyContactsPage = () => {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. +1234567890" {...field} />
+                        <Input placeholder="e.g. +919876543210" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Include country code for international numbers
+                        Indian numbers start with +91 followed by a 10-digit number
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
