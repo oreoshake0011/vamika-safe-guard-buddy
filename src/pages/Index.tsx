@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import SafetyCard from '@/components/SafetyCard';
@@ -8,11 +7,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useSOS } from '@/hooks/useSOS';
 
 const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { triggerSOS } = useSOS();
   const [safetyTips, setSafetyTips] = useState<string[]>([
     "Share your location with trusted contacts when traveling alone",
     "Stay in well-lit, populated areas when out at night",
@@ -22,10 +23,25 @@ const Index = () => {
   const [showAllTips, setShowAllTips] = useState(false);
 
   const handleEmergency = async () => {
-    // In a real app, this would send notifications to emergency contacts
-    // and share your location
-    await new Promise(resolve => setTimeout(resolve, 500));
-    navigate('/sos');
+    try {
+      const result = await triggerSOS();
+      if (result.success) {
+        navigate('/sos');
+      } else {
+        toast({
+          title: "SOS Error",
+          description: result.error || "Failed to activate SOS",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error triggering SOS:", error);
+      toast({
+        title: "SOS Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCheckIn = () => {

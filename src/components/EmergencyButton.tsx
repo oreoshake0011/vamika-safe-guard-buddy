@@ -76,6 +76,7 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
         variant: "default",
       });
     } catch (error) {
+      console.error("Error activating SOS:", error);
       toast({
         title: "Activation Failed",
         description: "Please try again or use alternative method.",
@@ -92,9 +93,11 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
     <div className={cn("relative", className)}>
       <button
         className={cn(
-          "sos-button relative overflow-hidden",
+          "sos-button relative overflow-hidden rounded-full shadow-lg border-2 flex items-center justify-center",
           sizes[size],
-          (isActivating || isSending) && "bg-red-700"
+          isActivating ? "bg-red-700 text-white border-red-500" : 
+          isSending ? "bg-red-700 text-white border-red-500" : 
+          "bg-red-600 text-white border-red-400 hover:bg-red-700",
         )}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
@@ -102,18 +105,19 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
         onTouchStart={handleMouseDown}
         onTouchEnd={handleMouseUp}
         disabled={isSending}
+        aria-label="Emergency SOS button"
       >
         {isSending ? (
-          <AlertCircle className="h-6 w-6 animate-pulse" />
+          <AlertCircle className="h-8 w-8 animate-pulse" />
         ) : isActivating ? (
-          <AlertCircle className="h-6 w-6 animate-pulse" />
+          <AlertCircle className="h-8 w-8 animate-pulse" />
         ) : (
-          "SOS"
+          <span className="font-bold">SOS</span>
         )}
         
         {isActivating && (
           <div 
-            className="absolute bottom-0 left-0 h-1 bg-white"
+            className="absolute bottom-0 left-0 h-2 bg-white"
             style={{ width: `${progress}%` }}
           />
         )}

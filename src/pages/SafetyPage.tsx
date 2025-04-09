@@ -9,15 +9,33 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useSOS } from '@/hooks/useSOS';
 
 const SafetyPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { triggerSOS } = useSOS();
 
   const handleEmergency = async () => {
-    // In a real app, this would send notifications to emergency contacts
-    await new Promise(resolve => setTimeout(resolve, 500));
-    navigate('/sos');
+    try {
+      const result = await triggerSOS();
+      if (result.success) {
+        navigate('/sos');
+      } else {
+        toast({
+          title: "SOS Error",
+          description: result.error || "Failed to activate SOS",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error triggering SOS:", error);
+      toast({
+        title: "SOS Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const showFeatureToast = (feature: string) => {
