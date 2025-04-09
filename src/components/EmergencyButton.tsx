@@ -16,6 +16,7 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
   size = 'md',
 }) => {
   const [isActivating, setIsActivating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [holdTimer, setHoldTimer] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
@@ -52,16 +53,26 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
       clearInterval(holdTimer);
       setHoldTimer(null);
     }
-    setIsActivating(false);
-    setProgress(0);
+    
+    if (!isSending) {
+      setIsActivating(false);
+      setProgress(0);
+    }
   };
   
   const triggerSOS = async () => {
     try {
+      setIsSending(true);
+      toast({
+        title: "SOS Activating",
+        description: "Sending emergency notifications...",
+      });
+      
       await onActivate();
+      
       toast({
         title: "SOS Activated",
-        description: "Emergency contacts are being notified.",
+        description: "Emergency contacts have been notified.",
         variant: "default",
       });
     } catch (error) {
@@ -70,6 +81,10 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
         description: "Please try again or use alternative method.",
         variant: "destructive",
       });
+    } finally {
+      setIsSending(false);
+      setIsActivating(false);
+      setProgress(0);
     }
   };
 
@@ -79,15 +94,18 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
         className={cn(
           "sos-button relative overflow-hidden",
           sizes[size],
-          isActivating && "bg-red-700"
+          (isActivating || isSending) && "bg-red-700"
         )}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onTouchStart={handleMouseDown}
         onTouchEnd={handleMouseUp}
+        disabled={isSending}
       >
-        {isActivating ? (
+        {isSending ? (
+          <AlertCircle className="h-6 w-6 animate-pulse" />
+        ) : isActivating ? (
           <AlertCircle className="h-6 w-6 animate-pulse" />
         ) : (
           "SOS"
@@ -101,11 +119,13 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
         )}
       </button>
       
-      {isActivating && (
-        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-sm font-medium">
-          {progress < 100 ? "Hold to activate" : "Activating..."}
-        </div>
-      )}
+      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-sm font-medium">
+        {isSending ? 
+          "Sending alerts..." : 
+          isActivating ? 
+            progress < 100 ? "Hold to activate" : "Activating..." : 
+            ""}
+      </div>
     </div>
   );
 };

@@ -55,6 +55,8 @@ serve(async (req) => {
       )
     }
 
+    console.log(`Found ${contacts.length} emergency contacts to notify`)
+
     // Get Twilio credentials from environment variables
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
@@ -74,6 +76,8 @@ serve(async (req) => {
         const formattedPhone = contact.phone_number.replace(/\s+|-|\(|\)|\.|\+/g, '')
         const phoneNumber = formattedPhone.startsWith('+') ? formattedPhone : `+${formattedPhone}`
 
+        console.log(`Sending SMS to ${contact.name} at ${phoneNumber}`)
+
         // Call Twilio API to send SMS
         const twilioResponse = await fetch(
           `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
@@ -92,6 +96,7 @@ serve(async (req) => {
         )
 
         const twilioData = await twilioResponse.json()
+        console.log('Twilio API response:', twilioData)
         
         if (twilioResponse.ok) {
           results.push({
@@ -110,6 +115,7 @@ serve(async (req) => {
           })
         }
       } catch (err) {
+        console.error(`Error sending SMS to ${contact.name}:`, err)
         results.push({
           contact: contact.name,
           phone: contact.phone_number,
@@ -127,7 +133,7 @@ serve(async (req) => {
         message: message,
         sent_count: sentCount,
         total_contacts: contacts.length,
-        status: sentCount > 0 ? 'partial_success' : 'failed',
+        status: sentCount > 0 ? (sentCount === contacts.length ? 'success' : 'partial_success') : 'failed',
         results: results,
       })
 
@@ -144,6 +150,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Error in emergency SMS function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

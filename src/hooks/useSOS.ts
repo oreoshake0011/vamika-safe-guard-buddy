@@ -59,15 +59,10 @@ export function useSOS() {
       const sosEvent = data[0] as SOSEvent;
       setCurrentSOSEvent(sosEvent);
 
-      toast({
-        title: "SOS Activated",
-        description: "Emergency contacts are being notified of your situation.",
-      });
-
       // Get emergency contacts to notify
       const { data: contactsData, error: contactsError } = await supabase
         .from('emergency_contacts')
-        .select('id')
+        .select('id, name, phone_number')
         .order('priority', { ascending: true });
 
       if (contactsError) {
@@ -89,7 +84,30 @@ export function useSOS() {
         if (notifyError) {
           console.error("Error creating notifications:", notifyError);
         }
+
+        // Send SMS to emergency contacts using the edge function
+        try {
+          const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A user';
+          const defaultMessage = `EMERGENCY ALERT: ${userName} has triggered an SOS alert`;
+          const locationInfo = location ? `Last known location: ${location.address}` : '';
+          const message = `${defaultMessage}. ${locationInfo}`;
+
+          const { error: smsError } = await supabase.functions.invoke('send-emergency-sms', {
+            body: { message, userId: user.id }
+          });
+
+          if (smsError) {
+            console.error("Error sending SMS:", smsError);
+          }
+        } catch (smsErr) {
+          console.error("Failed to send SMS notifications:", smsErr);
+        }
       }
+
+      toast({
+        title: "SOS Activated",
+        description: "Emergency contacts are being notified of your situation.",
+      });
 
       return { success: true, data: sosEvent };
     } catch (err: any) {
