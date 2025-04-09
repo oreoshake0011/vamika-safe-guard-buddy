@@ -58,11 +58,14 @@ serve(async (req) => {
     }
 
     console.log(`Found ${contacts.length} emergency contacts to notify`)
+    console.log('Contacts:', JSON.stringify(contacts))
 
     // Get Twilio credentials from environment variables
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
     const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
+
+    console.log(`Twilio credentials available: ${!!twilioAccountSid && !!twilioAuthToken && !!twilioPhoneNumber}`)
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
       throw new Error('Missing Twilio credentials in environment variables')
@@ -77,14 +80,22 @@ serve(async (req) => {
         // Format phone number (remove spaces, dashes, etc.)
         let formattedPhone = contact.phone_number.replace(/\s+|-|\(|\)|\.|\+/g, '')
         
-        // Ensure phone number has country code
+        console.log(`Original phone number: ${contact.phone_number}, after initial formatting: ${formattedPhone}`)
+        
+        // Ensure phone number has India country code
         if (!formattedPhone.startsWith('+')) {
-          // Add India country code as default
-          formattedPhone = `+91${formattedPhone}`
-        } else if (formattedPhone.startsWith('+') && !formattedPhone.startsWith('+91')) {
+          // Add India country code if missing
+          if (formattedPhone.startsWith('91')) {
+            formattedPhone = `+${formattedPhone}`
+          } else {
+            formattedPhone = `+91${formattedPhone}`
+          }
+        } else if (!formattedPhone.startsWith('+91')) {
           // If it has another country code, replace it with India's code
           formattedPhone = `+91${formattedPhone.substring(1)}`
         }
+        
+        console.log(`Final formatted phone number: ${formattedPhone}`)
         
         // Validate phone number format (must be E.164 format for Twilio)
         const phoneRegex = /^\+[1-9]\d{1,14}$/
@@ -112,12 +123,13 @@ serve(async (req) => {
         )
 
         const twilioData = await twilioResponse.json()
-        console.log('Twilio API response:', twilioData)
+        console.log('Twilio API response:', JSON.stringify(twilioData))
         
         if (twilioResponse.ok) {
           results.push({
             contact: contact.name,
             phone: contact.phone_number,
+            formattedPhone: formattedPhone,
             success: true,
             messageId: twilioData.sid,
           })
@@ -126,8 +138,11 @@ serve(async (req) => {
           results.push({
             contact: contact.name,
             phone: contact.phone_number,
+            formattedPhone: formattedPhone,
             success: false,
             error: twilioData.message || 'Failed to send SMS',
+            twilioResponseCode: twilioResponse.status,
+            twilioError: twilioData
           })
         }
       } catch (err) {

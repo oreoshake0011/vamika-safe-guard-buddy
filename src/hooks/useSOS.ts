@@ -149,7 +149,6 @@ export function useSOS() {
         toast({
           title: "No Emergency Contacts",
           description: "Please add emergency contacts to be notified in case of emergency.",
-          // Change from "warning" to "destructive" to fix the type error
           variant: "destructive",
         });
       } else {
@@ -180,14 +179,14 @@ export function useSOS() {
           const message = `${defaultMessage}. ${locationInfo}`;
 
           console.log("Calling send-emergency-sms function");
-          const { error: smsError } = await supabase.functions.invoke('send-emergency-sms', {
+          const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
             body: { message, userId: user.id }
           });
 
           if (smsError) {
             console.error("Error sending SMS:", smsError);
           } else {
-            console.log("SMS notifications sent successfully");
+            console.log("SMS notifications sent successfully", smsData);
           }
         } catch (smsErr) {
           console.error("Failed to send SMS notifications:", smsErr);
@@ -261,6 +260,7 @@ export function useSOS() {
     setIsLoading(true);
 
     try {
+      // First update the SOS event with the custom message
       const { error } = await supabase
         .from('sos_events')
         .update({ 
@@ -270,6 +270,23 @@ export function useSOS() {
         .eq('user_id', user.id);
 
       if (error) throw error;
+      
+      // Then send the custom message to emergency contacts
+      try {
+        const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
+          body: { message, userId: user.id }
+        });
+
+        if (smsError) {
+          console.error("Error sending custom message SMS:", smsError);
+          throw new Error(smsError.message);
+        }
+
+        console.log("Custom message SMS sent successfully", smsData);
+      } catch (smsErr) {
+        console.error("Failed to send custom message SMS:", smsErr);
+        throw smsErr;
+      }
       
       toast({
         title: "Message Sent",

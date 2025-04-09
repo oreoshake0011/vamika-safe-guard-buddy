@@ -15,6 +15,7 @@ const SOSPage = () => {
   const [location, setLocation] = useState({ lat: 0, lng: 0, address: 'Locating...' });
   const [customMessage, setCustomMessage] = useState('');
   const [emergencyContacts, setEmergencyContacts] = useState<any[]>([]);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -93,9 +94,33 @@ const SOSPage = () => {
   };
 
   const handleSendCustomMessage = async () => {
-    if (currentSOSEvent && customMessage.trim()) {
-      await sendCustomMessage(currentSOSEvent.id, customMessage);
-      setCustomMessage('');
+    if (!currentSOSEvent || !customMessage.trim()) return;
+    
+    setIsSendingMessage(true);
+    try {
+      const result = await sendCustomMessage(currentSOSEvent.id, customMessage);
+      if (result.success) {
+        setCustomMessage('');
+        toast({
+          title: "Message Sent",
+          description: "Your message has been sent to your emergency contacts."
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to send message",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("Error sending custom message:", err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingMessage(false);
     }
   };
 
@@ -184,9 +209,13 @@ const SOSPage = () => {
                   variant="outline"
                   size="icon"
                   onClick={handleSendCustomMessage}
-                  disabled={!customMessage.trim()}
+                  disabled={!customMessage.trim() || isSendingMessage}
                 >
-                  <Send className="h-4 w-4" />
+                  {isSendingMessage ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               
