@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { useSOS } from '@/hooks/useSOS';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/schema';
 
 const SOSPage = () => {
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -18,11 +18,34 @@ const SOSPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isLoading, currentSOSEvent, cancelSOS, sendCustomMessage } = useSOS();
+  const { isLoading, currentSOSEvent, cancelSOS, sendCustomMessage, checkForActiveSOSEvent } = useSOS();
 
+  // Check for active SOS on page load and setup timer
   useEffect(() => {
+    checkForActiveSOSEvent();
+    
+    // Try to get user's location (simplified - in a real app use Geolocation API)
+    setTimeout(() => {
+      setLocation({
+        lat: 40.7128,
+        lng: -74.0060,
+        address: '123 Safety Street, New York, NY 10001'
+      });
+    }, 1500);
+    
+    // Fetch emergency contacts if user is logged in
+    if (user) {
+      fetchEmergencyContacts();
+    }
+  }, [user]);
+  
+  // Setup timer for active SOS event
+  useEffect(() => {
+    console.log("Current SOS event:", currentSOSEvent);
+    
     // Start timer for active SOS event
     if (currentSOSEvent && currentSOSEvent.status === 'active') {
+      console.log("Setting up timer for active SOS");
       const timer = setInterval(() => {
         const start = new Date(currentSOSEvent.initiated_at).getTime();
         const now = new Date().getTime();
@@ -34,27 +57,12 @@ const SOSPage = () => {
     }
   }, [currentSOSEvent]);
 
-  useEffect(() => {
-    // Get the user's location (in a real app, this would use the Geolocation API)
-    setTimeout(() => {
-      setLocation({
-        lat: 40.7128,
-        lng: -74.0060,
-        address: '123 Safety Street, New York, NY 10001'
-      });
-    }, 1500);
-
-    // Fetch emergency contacts if user is logged in
-    if (user) {
-      fetchEmergencyContacts();
-    }
-  }, [user]);
-
   const fetchEmergencyContacts = async () => {
     try {
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
+        .eq('user_id', user?.id)
         .order('priority', { ascending: true })
         .limit(3);
 
@@ -63,6 +71,7 @@ const SOSPage = () => {
       }
 
       setEmergencyContacts(data || []);
+      console.log("Fetched emergency contacts:", data);
     } catch (error) {
       console.error('Error fetching emergency contacts:', error);
     }
@@ -76,8 +85,10 @@ const SOSPage = () => {
 
   const handleCancelSOS = async () => {
     if (currentSOSEvent) {
-      await cancelSOS(currentSOSEvent.id);
-      setTimeout(() => navigate('/'), 1500);
+      const result = await cancelSOS(currentSOSEvent.id);
+      if (result.success) {
+        setTimeout(() => navigate('/'), 1500);
+      }
     }
   };
 

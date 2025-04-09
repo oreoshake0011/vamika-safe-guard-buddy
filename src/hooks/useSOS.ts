@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +21,34 @@ export function useSOS() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (user) {
+      checkForActiveSOSEvent();
+    }
+  }, [user]);
+
+  const checkForActiveSOSEvent = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('sos_events')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('initiated_at', { ascending: false })
+        .limit(1);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setCurrentSOSEvent(data[0] as SOSEvent);
+      }
+    } catch (err) {
+      console.error("Error checking for active SOS events:", err);
+    }
+  };
+
   const triggerSOS = async (location?: { 
     address: string; 
     latitude: number; 
@@ -39,14 +66,51 @@ export function useSOS() {
     setIsLoading(true);
 
     try {
+      console.log("Starting SOS trigger process");
+      
+      // First check if there's already an active SOS event
+      const { data: existingData, error: existingError } = await supabase
+        .from('sos_events')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1);
+        
+      if (existingError) throw existingError;
+      
+      // If there's an active event, use that instead of creating a new one
+      if (existingData && existingData.length > 0) {
+        console.log("Found existing active SOS event:", existingData[0].id);
+        const eventId = existingData[0].id;
+        
+        // Get the full event details
+        const { data: fullEventData, error: fullEventError } = await supabase
+          .from('sos_events')
+          .select('*')
+          .eq('id', eventId)
+          .single();
+          
+        if (fullEventError) throw fullEventError;
+        
+        setCurrentSOSEvent(fullEventData as SOSEvent);
+        
+        toast({
+          title: "SOS Already Active",
+          description: "Your emergency contacts have already been notified.",
+        });
+        
+        return { success: true, data: fullEventData };
+      }
+      
       // Create a new SOS event
+      console.log("Creating new SOS event");
       const insertData = { 
         user_id: user.id,
         status: 'active',
         initiated_at: new Date().toISOString(),
-        location: location?.address,
-        latitude: location?.latitude,
-        longitude: location?.longitude
+        location: location?.address || null,
+        latitude: location?.latitude || null,
+        longitude: location?.longitude || null
       } as Database['public']['Tables']['sos_events']['Insert'];
 
       const { data, error } = await supabase
@@ -54,8 +118,16 @@ export function useSOS() {
         .insert([insertData])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating SOS event:", error);
+        throw error;
+      }
 
+      if (!data || data.length === 0) {
+        throw new Error("Failed to create SOS event");
+      }
+
+      console.log("SOS event created:", data[0]);
       const sosEvent = data[0] as SOSEvent;
       setCurrentSOSEvent(sosEvent);
 
@@ -63,11 +135,24 @@ export function useSOS() {
       const { data: contactsData, error: contactsError } = await supabase
         .from('emergency_contacts')
         .select('id, name, phone_number')
+        .eq('user_id', user.id)
         .order('priority', { ascending: true });
 
       if (contactsError) {
         console.error("Error fetching contacts:", contactsError);
-      } else if (contactsData && contactsData.length > 0) {
+        throw contactsError;
+      } 
+      
+      if (!contactsData || contactsData.length === 0) {
+        console.warn("No emergency contacts found to notify");
+        toast({
+          title: "No Emergency Contacts",
+          description: "Please add emergency contacts to be notified in case of emergency.",
+          variant: "warning",
+        });
+      } else {
+        console.log(`Found ${contactsData.length} contacts to notify`);
+        
         // Create notifications for each contact
         const notifications = contactsData.map(contact => ({
           sos_event_id: sosEvent.id,
@@ -92,12 +177,15 @@ export function useSOS() {
           const locationInfo = location ? `Last known location: ${location.address}` : '';
           const message = `${defaultMessage}. ${locationInfo}`;
 
+          console.log("Calling send-emergency-sms function");
           const { error: smsError } = await supabase.functions.invoke('send-emergency-sms', {
             body: { message, userId: user.id }
           });
 
           if (smsError) {
             console.error("Error sending SMS:", smsError);
+          } else {
+            console.log("SMS notifications sent successfully");
           }
         } catch (smsErr) {
           console.error("Failed to send SMS notifications:", smsErr);
@@ -115,11 +203,11 @@ export function useSOS() {
       
       toast({
         title: "SOS Error",
-        description: err.message,
+        description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
       
-      return { success: false, error: err.message };
+      return { success: false, error: err.message || "An unexpected error occurred" };
     } finally {
       setIsLoading(false);
     }
@@ -207,6 +295,7 @@ export function useSOS() {
     currentSOSEvent,
     triggerSOS,
     cancelSOS,
-    sendCustomMessage
+    sendCustomMessage,
+    checkForActiveSOSEvent
   };
 }

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
 }) => {
   const [isActivating, setIsActivating] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [holdTimer, setHoldTimer] = useState<number | null>(null);
+  const [holdTimer, setHoldTimer] = useState<NodeJS.Timeout | null>(null);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
   
@@ -27,14 +27,25 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
     lg: "h-28 w-28 text-2xl"
   };
 
+  // Cleanup effect for timers
+  useEffect(() => {
+    return () => {
+      if (holdTimer) {
+        clearInterval(holdTimer);
+      }
+    };
+  }, [holdTimer]);
+
   const handleMouseDown = () => {
+    if (isSending) return;
+    
     setIsActivating(true);
     setProgress(0);
     
     const startTime = Date.now();
     const timerDuration = 2000; // 2 seconds to activate
     
-    const timer = window.setInterval(() => {
+    const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const newProgress = Math.min(100, (elapsed / timerDuration) * 100);
       setProgress(newProgress);
@@ -61,6 +72,8 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
   };
   
   const triggerSOS = async () => {
+    if (isSending) return;
+    
     try {
       setIsSending(true);
       toast({
@@ -68,7 +81,9 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
         description: "Sending emergency notifications...",
       });
       
+      console.log("Starting onActivate function");
       await onActivate();
+      console.log("onActivate function completed");
       
       toast({
         title: "SOS Activated",

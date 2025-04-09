@@ -28,6 +28,8 @@ serve(async (req) => {
       )
     }
 
+    console.log(`Processing emergency SMS for user ${userId}`)
+
     // Create a Supabase client with the service role key
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -73,10 +75,21 @@ serve(async (req) => {
     for (const contact of contacts) {
       try {
         // Format phone number (remove spaces, dashes, etc.)
-        const formattedPhone = contact.phone_number.replace(/\s+|-|\(|\)|\.|\+/g, '')
-        const phoneNumber = formattedPhone.startsWith('+') ? formattedPhone : `+${formattedPhone}`
+        let formattedPhone = contact.phone_number.replace(/\s+|-|\(|\)|\.|\+/g, '')
+        
+        // Ensure phone number has country code
+        if (!formattedPhone.startsWith('+')) {
+          // Add US country code as default if none provided
+          formattedPhone = `+1${formattedPhone}`
+        }
+        
+        // Validate phone number format (must be E.164 format for Twilio)
+        const phoneRegex = /^\+[1-9]\d{1,14}$/
+        if (!phoneRegex.test(formattedPhone)) {
+          throw new Error(`Invalid phone number format: ${formattedPhone}`)
+        }
 
-        console.log(`Sending SMS to ${contact.name} at ${phoneNumber}`)
+        console.log(`Sending SMS to ${contact.name} at ${formattedPhone}`)
 
         // Call Twilio API to send SMS
         const twilioResponse = await fetch(
@@ -88,7 +101,7 @@ serve(async (req) => {
               'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
             },
             body: new URLSearchParams({
-              To: phoneNumber,
+              To: formattedPhone,
               From: twilioPhoneNumber,
               Body: message,
             }),
@@ -152,7 +165,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in emergency SMS function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
