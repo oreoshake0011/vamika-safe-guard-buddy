@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -148,7 +149,8 @@ export function useSOS() {
         toast({
           title: "No Emergency Contacts",
           description: "Please add emergency contacts to be notified in case of emergency.",
-          variant: "warning",
+          // Change from "warning" to "destructive" to fix the type error
+          variant: "destructive",
         });
       } else {
         console.log(`Found ${contactsData.length} contacts to notify`);
