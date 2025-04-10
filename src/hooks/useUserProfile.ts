@@ -17,6 +17,7 @@ export interface UserProfile {
     email: boolean;
     push: boolean;
   };
+  tasker_api_key: string | null;
 }
 
 export function useUserProfile() {
@@ -57,6 +58,7 @@ export function useUserProfile() {
           avatar_url: data.avatar_url,
           biometric_auth_enabled: data.biometric_auth_enabled || false,
           notification_preferences: parseNotificationPreferences(data.notification_preferences),
+          tasker_api_key: data.tasker_api_key,
         };
 
         setProfile(typedProfile);
@@ -124,6 +126,7 @@ export function useUserProfile() {
         avatar_url: data.avatar_url,
         biometric_auth_enabled: data.biometric_auth_enabled || false,
         notification_preferences: parseNotificationPreferences(data.notification_preferences),
+        tasker_api_key: data.tasker_api_key,
       };
       
       setProfile(updatedProfile);
