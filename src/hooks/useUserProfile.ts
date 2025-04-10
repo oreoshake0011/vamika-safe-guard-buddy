@@ -58,7 +58,8 @@ export function useUserProfile() {
           avatar_url: data.avatar_url,
           biometric_auth_enabled: data.biometric_auth_enabled || false,
           notification_preferences: parseNotificationPreferences(data.notification_preferences),
-          tasker_api_key: data.tasker_api_key,
+          // Type assertion to handle the tasker_api_key that might not be in the schema but exists in the database
+          tasker_api_key: (data as any).tasker_api_key,
         };
 
         setProfile(typedProfile);
@@ -109,9 +110,10 @@ export function useUserProfile() {
     setIsLoading(true);
 
     try {
+      // Cast the updates to match the database schema, including any custom fields
       const { data, error } = await supabase
         .from('profiles')
-        .update(updates as Database['public']['Tables']['profiles']['Update'])
+        .update(updates as any)
         .eq('id', user.id)
         .select()
         .single();
@@ -126,7 +128,8 @@ export function useUserProfile() {
         avatar_url: data.avatar_url,
         biometric_auth_enabled: data.biometric_auth_enabled || false,
         notification_preferences: parseNotificationPreferences(data.notification_preferences),
-        tasker_api_key: data.tasker_api_key,
+        // Type assertion to handle the tasker_api_key
+        tasker_api_key: (data as any).tasker_api_key,
       };
       
       setProfile(updatedProfile);
