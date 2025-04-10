@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useEmergencyContacts, EmergencyContact } from '@/hooks/useEmergencyContacts';
@@ -24,7 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Phone, UserPlus, AlertCircle } from 'lucide-react';
+import { MessageSquare, Phone, UserPlus, AlertCircle, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const contactFormSchema = z.object({
@@ -213,6 +214,13 @@ const EmergencyContactsPage = () => {
             <Phone className="mr-2 h-4 w-4" />
             Import from Device
           </Button>
+          
+          <Link to="/tasker-setup" className="w-full">
+            <Button variant="outline" className="w-full">
+              <Smartphone className="mr-2 h-4 w-4" />
+              Tasker Integration
+            </Button>
+          </Link>
           
           <Link to="/sos">
             <Button variant="destructive" className="w-full">

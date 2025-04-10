@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { XCircle, MapPin, Bell, Clock, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { useSOS } from '@/hooks/useSOS';
@@ -16,10 +16,26 @@ const SOSPage = () => {
   const [customMessage, setCustomMessage] = useState('');
   const [emergencyContacts, setEmergencyContacts] = useState<any[]>([]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [autoTriggering, setAutoTriggering] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const locationHook = useLocation();
   const { user } = useAuth();
-  const { isLoading, currentSOSEvent, cancelSOS, sendCustomMessage, checkForActiveSOSEvent } = useSOS();
+  const { isLoading, currentSOSEvent, cancelSOS, sendCustomMessage, checkForActiveSOSEvent, triggerSOS } = useSOS();
+
+  // Check URL parameters for auto-trigger flag
+  useEffect(() => {
+    const queryParams = new URLSearchParams(locationHook.search);
+    const autoTrigger = queryParams.get('autoTrigger') === 'true';
+    
+    if (autoTrigger && !currentSOSEvent && !autoTriggering) {
+      setAutoTriggering(true);
+      // Short delay to allow the app to initialize
+      setTimeout(() => {
+        handleAutoTriggerSOS();
+      }, 1000);
+    }
+  }, [locationHook.search, currentSOSEvent]);
 
   // Check for active SOS on page load and setup timer
   useEffect(() => {
@@ -78,6 +94,42 @@ const SOSPage = () => {
     }
   };
 
+  const handleAutoTriggerSOS = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to use the SOS feature.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Auto-triggering SOS",
+        description: "Sending emergency alert...",
+      });
+
+      // Get current location (this is a simplified example)
+      const currentLocation = {
+        address: "Auto-detected location",
+        latitude: 40.7128,
+        longitude: -74.0060
+      };
+
+      await triggerSOS(currentLocation);
+    } catch (error) {
+      console.error("Error auto-triggering SOS:", error);
+      toast({
+        title: "SOS Error",
+        description: "Failed to trigger SOS automatically",
+        variant: "destructive"
+      });
+    } finally {
+      setAutoTriggering(false);
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -132,11 +184,14 @@ const SOSPage = () => {
             <XCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2">No Active SOS</h1>
             <p className="text-muted-foreground mb-6">
-              There is currently no active emergency alert.
+              {autoTriggering 
+                ? "Initiating emergency alert..." 
+                : "There is currently no active emergency alert."}
             </p>
             <Button 
               className="w-full"
               onClick={() => navigate('/')}
+              disabled={autoTriggering}
             >
               Return to Home
             </Button>
