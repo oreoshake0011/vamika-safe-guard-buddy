@@ -108,6 +108,10 @@ serve(async (req) => {
       throw new Error('Missing Twilio credentials in environment variables');
     }
 
+    // Modify the message to work around Twilio trial limitations
+    // This adds a prefix emoji and changes format to avoid Twilio's prefixed message
+    const formattedMessage = `🆘 HELP! ${message}`;
+
     // Send SMS to each contact
     const results = [];
     let sentCount = 0;
@@ -154,7 +158,7 @@ serve(async (req) => {
             body: new URLSearchParams({
               To: formattedPhone,
               From: twilioPhoneNumber,
-              Body: message,
+              Body: formattedMessage,
             }),
           }
         );

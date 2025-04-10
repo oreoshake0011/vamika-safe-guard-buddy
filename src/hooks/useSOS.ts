@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -190,9 +189,8 @@ export function useSOS() {
         // Send SMS to emergency contacts using the edge function
         try {
           const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A user';
-          const defaultMessage = `EMERGENCY ALERT: ${userName} has triggered an SOS alert`;
           const locationInfo = location ? `Last known location: ${location.address}` : '';
-          const message = `${defaultMessage}. ${locationInfo}`;
+          const message = `${userName} has triggered an SOS alert. ${locationInfo}`;
 
           console.log("Calling send-emergency-sms function with message:", message);
           const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
