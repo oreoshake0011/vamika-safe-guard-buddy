@@ -4,11 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { 
   Settings, Bell, MapPin, Shield, User, Lock, 
-  Smartphone, HelpCircle, BookOpen, Save
+  Smartphone, HelpCircle, BookOpen, Save, Key
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 const SettingsPage = () => {
   const { toast } = useToast();
@@ -21,7 +31,13 @@ const SettingsPage = () => {
     biometricAuth: false,
     dataBackup: true,
     safetyTips: true,
+    taskerIntegration: false,
   });
+  
+  const [apiKey, setApiKey] = useState<string>('');
+  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -29,7 +45,12 @@ const SettingsPage = () => {
         ...settings,
         emergencyNotifications: profile.notification_preferences.sms,
         biometricAuth: profile.biometric_auth_enabled,
+        taskerIntegration: !!profile.tasker_api_key,
       });
+      
+      if (profile.tasker_api_key) {
+        setApiKey(profile.tasker_api_key);
+      }
     }
   }, [profile]);
 
@@ -44,6 +65,13 @@ const SettingsPage = () => {
         await updateNotificationPreferences({ sms: !settings.emergencyNotifications });
       } else if (setting === 'biometricAuth') {
         await updateProfile({ biometric_auth_enabled: !settings.biometricAuth });
+      } else if (setting === 'taskerIntegration') {
+        if (!settings.taskerIntegration) {
+          handleGenerateApiKey();
+        } else {
+          await updateProfile({ tasker_api_key: null });
+          setApiKey('');
+        }
       } else {
         toast({
           title: 'Setting Updated',
@@ -62,6 +90,44 @@ const SettingsPage = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleGenerateApiKey = async () => {
+    try {
+      setIsGeneratingKey(true);
+      
+      const randomBytes = new Uint8Array(32);
+      window.crypto.getRandomValues(randomBytes);
+      const newApiKey = Array.from(randomBytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+        .substring(0, 32);
+      
+      await updateProfile({ tasker_api_key: newApiKey });
+      
+      setApiKey(newApiKey);
+      setIsApiKeyDialogOpen(true);
+      
+      toast({
+        title: 'API Key Generated',
+        description: 'Your Tasker API key has been generated successfully.',
+      });
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate API key',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingKey(false);
+    }
+  };
+
+  const copyApiKeyToClipboard = () => {
+    navigator.clipboard.writeText(apiKey);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const saveAllSettings = async () => {
@@ -181,6 +247,34 @@ const SettingsPage = () => {
               onCheckedChange={() => handleToggle('safetyTips')}
             />
           </div>
+          
+          <div className="p-4 border-t flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Tasker Integration</h3>
+              <p className="text-sm text-muted-foreground">Enable automation with Tasker app</p>
+            </div>
+            <Switch 
+              checked={settings.taskerIntegration} 
+              onCheckedChange={() => handleToggle('taskerIntegration')}
+            />
+          </div>
+          
+          {settings.taskerIntegration && (
+            <div className="p-4 border-t">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setIsApiKeyDialogOpen(true)}
+                disabled={isGeneratingKey}
+              >
+                <Key className="h-4 w-4 mr-2" />
+                {apiKey ? 'View API Key' : 'Generate API Key'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                This API key is used to authenticate Tasker when sending emergency SMS
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="bg-card rounded-xl shadow-sm border overflow-hidden">
@@ -289,6 +383,61 @@ const SettingsPage = () => {
           </Button>
         </div>
       </div>
+      
+      <Dialog open={isApiKeyDialogOpen} onOpenChange={setIsApiKeyDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tasker API Key</DialogTitle>
+            <DialogDescription>
+              Use this API key to authenticate Tasker when sending emergency SMS.
+              Keep this key secret and secure.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <Input
+                value={apiKey}
+                readOnly
+                className="font-mono text-sm"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              size="sm" 
+              className="px-3"
+              onClick={copyApiKeyToClipboard}
+            >
+              <span className="sr-only">Copy</span>
+              {isCopied ? 'Copied!' : 'Copy'}
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            <h4 className="font-medium">How to use with Tasker:</h4>
+            <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+              <li>Install Tasker from Google Play Store</li>
+              <li>Create a new Task in Tasker</li>
+              <li>Add an HTTP Request action</li>
+              <li>Set Method to POST</li>
+              <li>URL: https://[YOUR-PROJECT-ID].supabase.co/functions/v1/tasker-emergency-sms</li>
+              <li>Content Type: application/json</li>
+              <li>Body: {"{"}"message":"EMERGENCY! Help needed","apiKey":"{apiKey}","userId":"{profile?.id}"{"}"}  </li>
+              <li>Create a Profile to trigger this Task (e.g. button press, shake gesture)</li>
+            </ol>
+          </div>
+          
+          <DialogFooter className="sm:justify-start">
+            <Button 
+              type="button" 
+              variant="secondary"
+              onClick={() => setIsApiKeyDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
