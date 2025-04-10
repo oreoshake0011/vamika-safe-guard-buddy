@@ -1,16 +1,19 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { 
   Settings, Bell, MapPin, Shield, User, Lock, 
-  Smartphone, HelpCircle, BookOpen
+  Smartphone, HelpCircle, BookOpen, Save
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const SettingsPage = () => {
   const { toast } = useToast();
+  const { profile, isLoading, updateProfile, updateNotificationPreferences } = useUserProfile();
+  
   const [settings, setSettings] = useState({
     emergencyNotifications: true,
     locationTracking: true,
@@ -20,17 +23,86 @@ const SettingsPage = () => {
     safetyTips: true,
   });
 
-  const handleToggle = (setting: keyof typeof settings) => {
+  useEffect(() => {
+    if (profile) {
+      setSettings({
+        ...settings,
+        emergencyNotifications: profile.notification_preferences.sms,
+        biometricAuth: profile.biometric_auth_enabled,
+      });
+    }
+  }, [profile]);
+
+  const handleToggle = async (setting: keyof typeof settings) => {
     setSettings({
       ...settings,
       [setting]: !settings[setting]
     });
     
-    toast({
-      title: 'Setting Updated',
-      description: `${setting.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} has been ${!settings[setting] ? 'enabled' : 'disabled'}.`,
-    });
+    try {
+      if (setting === 'emergencyNotifications') {
+        await updateNotificationPreferences({ sms: !settings.emergencyNotifications });
+      } else if (setting === 'biometricAuth') {
+        await updateProfile({ biometric_auth_enabled: !settings.biometricAuth });
+      } else {
+        toast({
+          title: 'Setting Updated',
+          description: `${setting.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} has been ${!settings[setting] ? 'enabled' : 'disabled'}.`,
+        });
+      }
+    } catch (error) {
+      setSettings({
+        ...settings,
+        [setting]: settings[setting]
+      });
+      
+      toast({
+        title: 'Update Failed',
+        description: 'There was an error saving your settings.',
+        variant: 'destructive',
+      });
+    }
   };
+
+  const saveAllSettings = async () => {
+    try {
+      await updateNotificationPreferences({
+        sms: settings.emergencyNotifications,
+        email: true,
+        push: true,
+      });
+      
+      await updateProfile({
+        biometric_auth_enabled: settings.biometricAuth,
+      });
+      
+      toast({
+        title: 'Settings Saved',
+        description: 'All your settings have been updated successfully.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save all settings',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-48" />
+          
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -141,6 +213,14 @@ const SettingsPage = () => {
             />
           </div>
         </div>
+        
+        <Button 
+          className="w-full mb-2"
+          onClick={saveAllSettings}
+        >
+          <Save className="h-4 w-4 mr-2" />
+          Save All Settings
+        </Button>
         
         <div className="bg-card rounded-xl shadow-sm border overflow-hidden">
           <div className="p-4 border-b bg-muted/50">
