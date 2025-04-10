@@ -32,6 +32,8 @@ export function useSOS() {
     if (!user) return;
     
     try {
+      console.log("Checking for active SOS events for user:", user.id);
+      
       const { data, error } = await supabase
         .from('sos_events')
         .select('*')
@@ -40,10 +42,18 @@ export function useSOS() {
         .order('initiated_at', { ascending: false })
         .limit(1);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error checking for active SOS events:", error);
+        throw error;
+      }
+      
+      console.log("Active SOS events result:", data);
       
       if (data && data.length > 0) {
         setCurrentSOSEvent(data[0] as SOSEvent);
+        console.log("Set current SOS event:", data[0]);
+      } else {
+        console.log("No active SOS events found");
       }
     } catch (err) {
       console.error("Error checking for active SOS events:", err);
@@ -67,7 +77,7 @@ export function useSOS() {
     setIsLoading(true);
 
     try {
-      console.log("Starting SOS trigger process");
+      console.log("Starting SOS trigger process for user:", user.id);
       
       // First check if there's already an active SOS event
       const { data: existingData, error: existingError } = await supabase
@@ -77,7 +87,10 @@ export function useSOS() {
         .eq('status', 'active')
         .limit(1);
         
-      if (existingError) throw existingError;
+      if (existingError) {
+        console.error("Error checking for existing SOS events:", existingError);
+        throw existingError;
+      }
       
       // If there's an active event, use that instead of creating a new one
       if (existingData && existingData.length > 0) {
@@ -91,7 +104,10 @@ export function useSOS() {
           .eq('id', eventId)
           .single();
           
-        if (fullEventError) throw fullEventError;
+        if (fullEventError) {
+          console.error("Error getting full SOS event details:", fullEventError);
+          throw fullEventError;
+        }
         
         setCurrentSOSEvent(fullEventData as SOSEvent);
         
@@ -104,7 +120,7 @@ export function useSOS() {
       }
       
       // Create a new SOS event
-      console.log("Creating new SOS event");
+      console.log("Creating new SOS event with location:", location);
       const insertData = { 
         user_id: user.id,
         status: 'active',
@@ -152,7 +168,7 @@ export function useSOS() {
           variant: "destructive",
         });
       } else {
-        console.log(`Found ${contactsData.length} contacts to notify`);
+        console.log(`Found ${contactsData.length} contacts to notify:`, contactsData);
         
         // Create notifications for each contact
         const notifications = contactsData.map(contact => ({
@@ -178,18 +194,26 @@ export function useSOS() {
           const locationInfo = location ? `Last known location: ${location.address}` : '';
           const message = `${defaultMessage}. ${locationInfo}`;
 
-          console.log("Calling send-emergency-sms function");
+          console.log("Calling send-emergency-sms function with message:", message);
           const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
             body: { message, userId: user.id }
           });
 
           if (smsError) {
             console.error("Error sending SMS:", smsError);
+            throw new Error(`SMS sending failed: ${smsError.message}`);
           } else {
-            console.log("SMS notifications sent successfully", smsData);
+            console.log("SMS notifications sent successfully:", smsData);
           }
-        } catch (smsErr) {
+        } catch (smsErr: any) {
           console.error("Failed to send SMS notifications:", smsErr);
+          
+          // Don't throw here - we want to continue even if SMS fails
+          toast({
+            title: "SMS Sending Issue",
+            description: "There was a problem sending SMS notifications, but your SOS is still active.",
+            variant: "destructive",
+          });
         }
       }
 
