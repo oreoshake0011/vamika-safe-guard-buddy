@@ -133,7 +133,7 @@ const IncidentFeedPage = () => {
               </Button>
             </div>
             
-            <Link to="/report-incident">
+            <Link to="/report">
               <Button variant="outline" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Report

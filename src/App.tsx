@@ -60,6 +60,10 @@ export default function App() {
       element: <IncidentReportPage />,
     },
     {
+      path: '/report-incident',
+      element: <IncidentReportPage />,
+    },
+    {
       path: '/scan',
       element: <CameraScanPage />,
     },
