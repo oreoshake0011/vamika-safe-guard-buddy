@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -118,15 +119,24 @@ export function useSOS() {
         return { success: true, data: fullEventData };
       }
       
+      // If no location is provided, use default coordinates for Dehradun, India
+      const defaultLocation = {
+        address: "Dehradun, India",
+        latitude: 30.2724,
+        longitude: 78.0010
+      };
+      
+      const locationToUse = location || defaultLocation;
+      
       // Create a new SOS event
-      console.log("Creating new SOS event with location:", location);
+      console.log("Creating new SOS event with location:", locationToUse);
       const insertData = { 
         user_id: user.id,
         status: 'active',
         initiated_at: new Date().toISOString(),
-        location: location?.address || null,
-        latitude: location?.latitude || null,
-        longitude: location?.longitude || null
+        location: locationToUse.address || null,
+        latitude: locationToUse.latitude || null,
+        longitude: locationToUse.longitude || null
       } as Database['public']['Tables']['sos_events']['Insert'];
 
       const { data, error } = await supabase
@@ -189,12 +199,22 @@ export function useSOS() {
         // Send SMS to emergency contacts using the edge function
         try {
           const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A user';
-          const locationInfo = location ? `Last known location: ${location.address}` : '';
+          const locationInfo = locationToUse.address ? `Last known location: ${locationToUse.address}` : '';
           const message = `${userName} has triggered an SOS alert. ${locationInfo}`;
+
+          const coordinates = {
+            lat: locationToUse.latitude,
+            lng: locationToUse.longitude
+          };
 
           console.log("Calling send-emergency-sms function with message:", message);
           const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
-            body: { message, userId: user.id }
+            body: { 
+              message, 
+              userId: user.id,
+              coordinates: coordinates,
+              isCheckIn: false
+            }
           });
 
           if (smsError) {
@@ -293,10 +313,29 @@ export function useSOS() {
 
       if (error) throw error;
       
+      // Get SOS event details for coordinates
+      const { data: sosData, error: sosError } = await supabase
+        .from('sos_events')
+        .select('*')
+        .eq('id', sosId)
+        .single();
+        
+      if (sosError) throw sosError;
+      
+      const coordinates = sosData.latitude && sosData.longitude ? {
+        lat: sosData.latitude,
+        lng: sosData.longitude
+      } : null;
+      
       // Then send the custom message to emergency contacts
       try {
         const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
-          body: { message, userId: user.id }
+          body: { 
+            message, 
+            userId: user.id,
+            coordinates: coordinates,
+            isCheckIn: false
+          }
         });
 
         if (smsError) {
@@ -330,6 +369,58 @@ export function useSOS() {
       setIsLoading(false);
     }
   };
+  
+  const sendCheckInMessage = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to use the check-in feature.",
+        variant: "destructive",
+      });
+      return { success: false, error: "Authentication required" };
+    }
+
+    setIsLoading(true);
+
+    try {
+      const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Your contact';
+      const message = `${userName} is safe and out of danger now.`;
+
+      const { error: smsError, data: smsData } = await supabase.functions.invoke('send-emergency-sms', {
+        body: { 
+          message, 
+          userId: user.id,
+          isCheckIn: true
+        }
+      });
+
+      if (smsError) {
+        console.error("Error sending check-in SMS:", smsError);
+        throw new Error(`Check-in SMS sending failed: ${smsError.message}`);
+      }
+
+      console.log("Check-in SMS sent successfully", smsData);
+      
+      toast({
+        title: "Check-In Sent",
+        description: "Your emergency contacts have been notified that you're safe.",
+      });
+      
+      return { success: true, data: smsData };
+    } catch (err: any) {
+      console.error("Error sending check-in:", err);
+      
+      toast({
+        title: "Check-In Error",
+        description: err.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+      
+      return { success: false, error: err.message || "An unexpected error occurred" };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     isLoading,
@@ -337,6 +428,7 @@ export function useSOS() {
     triggerSOS,
     cancelSOS,
     sendCustomMessage,
-    checkForActiveSOSEvent
+    checkForActiveSOSEvent,
+    sendCheckInMessage
   };
 }

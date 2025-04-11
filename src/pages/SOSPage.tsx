@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const SOSPage = () => {
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [location, setLocation] = useState({ lat: 0, lng: 0, address: 'Locating...' });
+  const [location, setLocation] = useState({ lat: 30.2724, lng: 78.0010, address: 'Dehradun, India' });
   const [customMessage, setCustomMessage] = useState('');
   const [emergencyContacts, setEmergencyContacts] = useState<any[]>([]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -41,12 +41,12 @@ const SOSPage = () => {
   useEffect(() => {
     checkForActiveSOSEvent();
     
-    // Try to get user's location (simplified - in a real app use Geolocation API)
+    // Try to get user's location (using default Dehradun coordinates)
     setTimeout(() => {
       setLocation({
-        lat: 40.7128,
-        lng: -74.0060,
-        address: '123 Safety Street, New York, NY 10001'
+        lat: 30.2724,
+        lng: 78.0010,
+        address: 'Dehradun, India'
       });
     }, 1500);
     
@@ -110,11 +110,11 @@ const SOSPage = () => {
         description: "Sending emergency alert...",
       });
 
-      // Get current location (this is a simplified example)
+      // Use default Dehradun coordinates
       const currentLocation = {
-        address: "Auto-detected location",
-        latitude: 40.7128,
-        longitude: -74.0060
+        address: "Dehradun, India",
+        latitude: 30.2724,
+        longitude: 78.0010
       };
 
       await triggerSOS(currentLocation);
@@ -176,6 +176,11 @@ const SOSPage = () => {
     }
   };
 
+  const openMapWithCoordinates = () => {
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+    window.open(mapUrl, '_blank');
+  };
+
   if (!currentSOSEvent) {
     return (
       <Layout>
@@ -228,9 +233,18 @@ const SOSPage = () => {
               <div className="bg-background rounded-lg p-4 mb-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-sm">Current Location</p>
-                    <p className="text-sm text-muted-foreground">{location.address}</p>
+                    <p className="text-sm text-muted-foreground mb-1">{location.address}</p>
+                    <p className="text-sm text-muted-foreground">{location.lat}° N, {location.lng}° E</p>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="px-0 h-auto py-1"
+                      onClick={openMapWithCoordinates}
+                    >
+                      View on Map
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -274,15 +288,17 @@ const SOSPage = () => {
                 </Button>
               </div>
               
-              <Button 
-                variant="destructive" 
-                className="w-full"
-                onClick={handleCancelSOS}
-                disabled={isLoading}
-              >
-                <XCircle className="h-5 w-5 mr-2" />
-                {isLoading ? "Processing..." : "Cancel SOS"}
-              </Button>
+              <div className="flex justify-center">
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
+                  onClick={handleCancelSOS}
+                  disabled={isLoading}
+                >
+                  <XCircle className="h-5 w-5 mr-2" />
+                  {isLoading ? "Processing..." : "Cancel SOS"}
+                </Button>
+              </div>
             </>
           )}
         </div>

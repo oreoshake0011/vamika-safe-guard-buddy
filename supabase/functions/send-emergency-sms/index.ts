@@ -32,7 +32,7 @@ serve(async (req) => {
       );
     }
     
-    const { message, userId } = requestBody;
+    const { message, userId, isCheckIn, coordinates } = requestBody;
     
     if (!message || !userId) {
       console.error("Missing required parameters", { message, userId });
@@ -47,7 +47,7 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Processing emergency SMS for user ${userId}`)
+    console.log(`Processing ${isCheckIn ? 'check-in' : 'emergency'} SMS for user ${userId}`)
 
     // Verify environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -108,9 +108,18 @@ serve(async (req) => {
       throw new Error('Missing Twilio credentials in environment variables');
     }
 
-    // Modify the message to work around Twilio trial limitations
-    // This adds a prefix emoji and changes format to avoid Twilio's prefixed message
-    const formattedMessage = `🆘 HELP! ${message}`;
+    // Format message based on type (emergency or check-in)
+    let formattedMessage = message;
+    
+    // Add coordinates and map link if provided for emergency messages
+    if (coordinates && !isCheckIn) {
+      const mapLink = `https://www.google.com/maps/search/?api=1&query=${coordinates.lat},${coordinates.lng}`;
+      formattedMessage = `🆘 HELP! ${message}\n\nLocation: ${coordinates.lat}, ${coordinates.lng}\n\nView on map: ${mapLink}`;
+    } else if (isCheckIn) {
+      formattedMessage = `✅ SAFE: ${message}`;
+    } else {
+      formattedMessage = `🆘 HELP! ${message}`;
+    }
 
     // Send SMS to each contact
     const results = [];
@@ -208,6 +217,7 @@ serve(async (req) => {
           total_contacts: contacts.length,
           status: sentCount > 0 ? (sentCount === contacts.length ? 'success' : 'partial_success') : 'failed',
           results: results,
+          is_check_in: isCheckIn || false,
         });
       console.log("SMS log entry created in database");
     } catch (logError) {
