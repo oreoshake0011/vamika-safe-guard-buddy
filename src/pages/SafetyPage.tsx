@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import SafetyCard from '@/components/SafetyCard';
 import EmergencyButton from '@/components/EmergencyButton';
 import { 
-  Bell, Phone, Wifi, MapPin, Clock, ShieldAlert, 
+  Bell, Phone, Wifi, MapPin, ShieldAlert, 
   Volume2, Camera, Share2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -110,16 +110,6 @@ const SafetyPage = () => {
             action={{
               label: "Plan Safe Route",
               onClick: () => showFeatureToast("Safe Route")
-            }}
-          />
-          
-          <SafetyCard
-            title="Safety Timer"
-            description="Set a timer for activities and get alerts if you don't check in."
-            icon={<Clock className="h-5 w-5" />}
-            action={{
-              label: "Set Timer",
-              onClick: () => showFeatureToast("Safety Timer")
             }}
           />
           

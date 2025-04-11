@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Shield, Users, Map, Settings, Menu, X, Camera, MessageSquare, AlertTriangle, User } from 'lucide-react';
+import { Home, Shield, Users, Map, Menu, X, Camera, MessageSquare, AlertTriangle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobile } from '@/hooks/useMobile';
@@ -24,7 +24,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Camera Scanner', path: '/camera-scan', icon: Camera },
     { name: 'Incident Reports', path: '/incident-feed', icon: AlertTriangle },
     { name: 'Profile', path: '/profile', icon: User },
-    { name: 'Settings', path: '/settings', icon: Settings },
   ];
   
   const toggleNav = () => setIsOpen(!isOpen);

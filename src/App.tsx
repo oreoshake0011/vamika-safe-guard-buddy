@@ -8,14 +8,12 @@ import SOSPage from './pages/SOSPage';
 import ZonesPage from './pages/ZonesPage';
 import SafetyPage from './pages/SafetyPage';
 import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
 import IncidentFeedPage from './pages/IncidentFeedPage';
 import IncidentReportPage from './pages/IncidentReportPage';
 import CameraScanPage from './pages/CameraScanPage';
 import AISafetyChatPage from './pages/AISafetyChatPage';
 import ContactsPage from './pages/ContactsPage';
 import EmergencyContactsPage from './pages/EmergencyContactsPage';
-import TaskerSetupPage from './pages/TaskerSetupPage';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -54,10 +52,6 @@ export default function App() {
       element: <ProfilePage />,
     },
     {
-      path: '/settings',
-      element: <SettingsPage />,
-    },
-    {
       path: '/feed',
       element: <IncidentFeedPage />,
     },
@@ -80,10 +74,6 @@ export default function App() {
     {
       path: '/emergency-contacts',
       element: <EmergencyContactsPage />,
-    },
-    {
-      path: '/tasker-setup',
-      element: <TaskerSetupPage />,
     },
     {
       path: '*',

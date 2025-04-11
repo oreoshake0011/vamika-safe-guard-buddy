@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import SafetyCard from '@/components/SafetyCard';
@@ -42,13 +43,6 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleCheckIn = () => {
-    toast({
-      title: "Safety Check",
-      description: "You've been marked safe. Contacts won't be notified.",
-    });
   };
 
   const handleSafetyTip = () => {
@@ -121,13 +115,6 @@ const Index = () => {
             >
               <Phone className="h-5 w-5" />
               <span>Call Emergency Contact</span>
-            </button>
-            <button 
-              onClick={handleCheckIn}
-              className="w-full flex items-center gap-3 p-3 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-lg transition-colors text-left"
-            >
-              <Bell className="h-5 w-5" />
-              <span>Check In (I'm Safe)</span>
             </button>
           </div>
         </section>
