@@ -26,6 +26,7 @@ const Index = () => {
 
   const handleEmergency = async () => {
     try {
+      console.log("SOS button pressed, triggering emergency...");
       // Use default Dehradun coordinates
       const defaultLocation = {
         address: "Dehradun, India",
@@ -34,6 +35,8 @@ const Index = () => {
       };
       
       const result = await triggerSOS(defaultLocation);
+      console.log("SOS trigger result:", result);
+      
       if (result.success) {
         navigate('/sos');
       } else {
@@ -65,7 +68,10 @@ const Index = () => {
     
     setIsCheckingIn(true);
     try {
+      console.log("Sending check-in message...");
       const result = await sendCheckInMessage();
+      console.log("Check-in result:", result);
+      
       if (result.success) {
         toast({
           title: "Safety Check",
