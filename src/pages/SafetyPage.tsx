@@ -53,14 +53,14 @@ const SafetyPage = () => {
           <p className="text-muted-foreground">Access all safety features from one place</p>
         </div>
         
-        <div className="text-center mb-6">
+        <div className="flex justify-center items-center mb-6">
           <EmergencyButton 
             onActivate={handleEmergency}
             size="lg"
             className="mx-auto mb-4"
           />
-          <p className="text-sm text-muted-foreground">Press and hold to activate emergency mode</p>
         </div>
+        <p className="text-sm text-muted-foreground text-center mb-6">Press and hold to activate emergency mode</p>
         
         <div className="grid gap-4 sm:grid-cols-2">
           <SafetyCard

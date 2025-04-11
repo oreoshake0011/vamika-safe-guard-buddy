@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Shield, Users, Map, Menu, X, Camera, MessageSquare, AlertTriangle, User } from 'lucide-react';
+import { Home, Shield, Users, Map, Menu, X, Camera, AlertTriangle, User, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobile } from '@/hooks/useMobile';
+import { useTheme } from '@/contexts/ThemeContext';
 import MobileNavbar from './MobileNavbar';
 
 type LayoutProps = {
@@ -15,6 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const location = useLocation();
   const isMobile = useMobile();
+  const { theme, toggleTheme } = useTheme();
   
   const navItems = [
     { name: 'Home', path: '/', icon: Home },
@@ -37,9 +39,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Shield className="h-6 w-6" />
             <span>Vamika</span>
           </Link>
-          <Button variant="ghost" size="icon" onClick={toggleNav} aria-label="Toggle menu">
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleTheme} 
+              aria-label="Toggle theme"
+            >
+              {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={toggleNav} aria-label="Toggle menu">
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </header>
       )}
       
@@ -52,11 +64,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             "w-64 relative"
         )}>
           {!isMobile && (
-            <div className="p-6 border-b">
+            <div className="p-6 border-b flex justify-between items-center">
               <Link to="/" className="flex items-center gap-2 font-bold text-primary text-xl">
                 <Shield className="h-6 w-6" />
                 <span>Vamika</span>
               </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleTheme} 
+                aria-label="Toggle theme"
+              >
+                {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              </Button>
             </div>
           )}
           
