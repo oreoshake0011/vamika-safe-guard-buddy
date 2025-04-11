@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import SafetyCard from '@/components/SafetyCard';
@@ -14,7 +13,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { triggerSOS, sendCheckInMessage } = useSOS();
+  const { triggerSOS } = useSOS();
   const [safetyTips, setSafetyTips] = useState<string[]>([
     "Share your location with trusted contacts when traveling alone",
     "Stay in well-lit, populated areas when out at night",
@@ -22,21 +21,10 @@ const Index = () => {
     "Keep emergency contacts easily accessible on your phone"
   ]);
   const [showAllTips, setShowAllTips] = useState(false);
-  const [isCheckingIn, setIsCheckingIn] = useState(false);
 
   const handleEmergency = async () => {
     try {
-      console.log("SOS button pressed, triggering emergency...");
-      // Use default Dehradun coordinates
-      const defaultLocation = {
-        address: "Dehradun, India",
-        latitude: 30.2724,
-        longitude: 78.0010
-      };
-      
-      const result = await triggerSOS(defaultLocation);
-      console.log("SOS trigger result:", result);
-      
+      const result = await triggerSOS();
       if (result.success) {
         navigate('/sos');
       } else {
@@ -56,44 +44,11 @@ const Index = () => {
     }
   };
 
-  const handleCheckIn = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to use the check-in feature.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsCheckingIn(true);
-    try {
-      console.log("Sending check-in message...");
-      const result = await sendCheckInMessage();
-      console.log("Check-in result:", result);
-      
-      if (result.success) {
-        toast({
-          title: "Safety Check",
-          description: "You've been marked safe. Your contacts have been notified.",
-        });
-      } else {
-        toast({
-          title: "Check-In Error",
-          description: result.error || "Failed to send check-in message",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error during check-in:", error);
-      toast({
-        title: "Check-In Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCheckingIn(false);
-    }
+  const handleCheckIn = () => {
+    toast({
+      title: "Safety Check",
+      description: "You've been marked safe. Contacts won't be notified.",
+    });
   };
 
   const handleSafetyTip = () => {
@@ -169,18 +124,10 @@ const Index = () => {
             </button>
             <button 
               onClick={handleCheckIn}
-              disabled={isCheckingIn}
-              className="w-full flex items-center gap-3 p-3 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-lg transition-colors text-left disabled:opacity-50"
+              className="w-full flex items-center gap-3 p-3 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-lg transition-colors text-left"
             >
               <Bell className="h-5 w-5" />
-              {isCheckingIn ? (
-                <span className="flex items-center">
-                  <span className="mr-2">Checking in...</span>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
-                </span>
-              ) : (
-                <span>Check In (I'm Safe)</span>
-              )}
+              <span>Check In (I'm Safe)</span>
             </button>
           </div>
         </section>
